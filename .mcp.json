@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "supabase-mcp-server": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "src.mcp_server"],
+      "env": {
+        "UV_PYTHON": "python",
+        "SUPABASE_URL": "https://dtdhaekjdukacnfwslpq.supabase.co",
+        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZGhhZWtqZHVrYWNuZndzbHBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4MjMzMTAsImV4cCI6MjA2ODM5OTMxMH0.z-H72DXkVSXaJ4tjKBcJn75mM7iBCLjRcGs4WVip4D4"
+      }
+    }
+  }
+}
