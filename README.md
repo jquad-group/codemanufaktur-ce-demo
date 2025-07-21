@@ -1,5 +1,9 @@
 # Supabase MCP Server
 
+## DEMO of this application using Claude Desktop MCP integraiton:
+![Demo](demo.png)
+
+
 ##  Context Engineering Workflow
 
 This project follows a structured Context Engineering approach for AI-assisted development and feature implementation.
