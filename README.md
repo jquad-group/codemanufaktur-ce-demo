@@ -1,8 +1,80 @@
 # Supabase MCP Server
 
+##  Context Engineering Workflow
+
+This project follows a structured Context Engineering approach for AI-assisted development and feature implementation.
+
+### Setup
+
+1. **Repository klonen**: `git clone https://github.com/jquad-group/codemanufaktur-ce-demo.git`
+2. **Projektregeln in GUIDELINES.md definieren** (team-übergreifende Richtlichen)
+3. **Code-Beispiele im examples/ Ordner definieren** (stark empfohlen, hier nicht vorhanden)
+
+### Workflow-Schritte
+
+#### 1. Feature Request erstellen
+
+- **THIS_PROJECT.md** mit konkreten Anforderungen für MCP Tools/Features bearbeiten
+- Spezifische Supabase-Funktionalität und Database Requirements beschreiben
+- Relevante Beispiele aus dediziertem Ordner referenzieren
+- Supabase Dokumentation, MCP APIs usw. verlinken
+
+#### 2. PRP (Product Requirements Prompt) generieren
+
+- **Claude Code Kommando**: `/generate-prp THIS_PROJECT.md`
+- Automatische Codebase-Analyse für MCP Server Patterns
+- Sammlung relevanter Supabase und FastMCP Dokumentation
+- Erstellung umfassender Implementierungs-Blueprint in `PRPs/`
+
+#### 3. Features implementieren
+
+**Für das Haupt-Projekt:**
+- **Claude Code Kommando**: `/execute-prp THIS_PROJECT.md`
+
+**Für neue Features:**
+- **Claude Code Kommando**: `/execute-prp PRPs/new-feature-name.md`
+- Neue PRP-Dateien werden automatisch in `PRPs/` erstellt
+
+**Implementierung:**
+- AI liest gesamten Kontext aus PRP (Database Schema, Security, Tools)
+- Detaillierte Implementierungsplanung für MCP Tools
+- Schrittweise Umsetzung mit Row Level Security Validierung
+
+#### 4. Validierung & Testing
+
+- Automatische Tests mit `pytest` und Linting mit `ruff`/`mypy`
+- MCP Server Testing mit `uv run mcp dev src/mcp_server.py`
+- Supabase Connection und RLS Policy Validierung
+- Iterative Fehlerbehebung und Sicherstellung aller Erfolgskriterien
+
+### Template-Struktur
+
+```
+context-engineering-mcp-db/
+? .claude/commands/        # Custom Claude Code Kommandos
+? PRPs/                    # Generated Product Requirements Prompts
+?   ? templates/          # PRP Templates
+?   ? supabase-mcp-server.md
+? src/                     # MCP Server Implementation Examples
+? tests/                   # Test Patterns und Validation Examples
+? GUIDELINES.md           # Projekt-weite Regeln für AI Assistant
+? THIS_PROJECT.md        # Projekt-Kontext und Architektur
+```
+
+### Best Practices für MCP Development
+
+- **Konkrete Database Schema Beschreibungen** mit RLS Policy Requirements
+- **Umfangreiche MCP Tool Beispiele** in `src/mcp_server.py`
+- **Supabase API-Dokumentation** und FastMCP Patterns einbinden
+- **Spezifische Security Constraints** und Row Level Security definieren
+- **Test-Patterns für Database Operations** und Error-Handling inkludieren
+- **Environment Configuration** für verschiedene Supabase Setups
+
+---
+
 A Model Context Protocol (MCP) server for secure Supabase database integration. Enables Claude and other AI assistants to interact with Supabase databases through high-level tools with built-in Row Level Security and comprehensive validation.
 
-## ?? Quick Start
+##  Quick Start
 
 ### 1. Prerequisites
 
@@ -58,7 +130,7 @@ uv run ruff check src/
 uv run mypy src/
 ```
 
-## ?? Project Structure
+##  Project Structure
 
 ```
 context-engineering-mcp-db/
@@ -78,7 +150,7 @@ context-engineering-mcp-db/
    README.md               # This file
 ```
 
-## ?? Configuration
+##  Configuration
 
 ### Environment Variables
 
@@ -97,9 +169,9 @@ context-engineering-mcp-db/
 1. Go to [supabase.com](https://supabase.com) and create/open your project
 2. Navigate to **Settings** ? **API**
 3. Copy your **Project URL** and **anon public** key
-4. For admin operations, copy the **service_role** key (?? keep this secure!)
+4. For admin operations, copy the **service_role** key ( keep this secure!)
 
-## ?? RLS Setup
+##  RLS Setup
 
 ### Why RLS is Required
 
@@ -212,9 +284,9 @@ If you're getting "No data" errors:
 3. Test with service role key (bypasses RLS) to confirm data exists
 4. Verify your policies match your authentication method (anon vs authenticated)
 
-?? **Learn More**: [Supabase RLS Documentation](https://supabase.com/docs/guides/auth/row-level-security)
+ **Learn More**: [Supabase RLS Documentation](https://supabase.com/docs/guides/auth/row-level-security)
 
-## ?? Development
+##  Development
 
 ### Local Development Workflow
 
@@ -243,7 +315,7 @@ uv run mcp dev src/mcp_server.py
 3. Update documentation
 4. Run validation suite before committing
 
-## ?? Testing
+##  Testing
 
 ### Running Tests
 
@@ -268,7 +340,7 @@ uv run pytest tests/ -v -s
 - **Mocked Tests**: Test with mocked Supabase dependencies
 - **Validation Tests**: Test security and input validation
 
-## ?? Available Tools
+##  Available Tools
 
 The MCP server provides 5 core database tools:
 
@@ -344,7 +416,7 @@ Update existing records based on filter conditions.
 
 **Returns**: Updated record details
 
-## ??? Security Features
+## ? Security Features
 
 ### Input Validation
 - **SQL Injection Protection**: All inputs validated against dangerous patterns
@@ -362,7 +434,7 @@ Update existing records based on filter conditions.
 - **Mass Update Prevention**: Requires filters for all update operations
 - **Query Limits**: Enforces reasonable pagination limits
 
-## ??? Claude Desktop Integration
+## ? Claude Desktop Integration
 
 ### Option 1: Automatic Installation
 ```bash
@@ -422,7 +494,7 @@ Add to your Claude Desktop configuration file:
 }
 ```
 
-?? **Important**: 
+ **Important**: 
   - Use absolute paths in the `--directory` argument
   - Replace the directory path with your actual project location
   - Use forward slashes `/` even on Windows (as shown in the examples above)
@@ -430,10 +502,10 @@ Add to your Claude Desktop configuration file:
 ### Verification
 
 1. Restart Claude Desktop
-2. Check for the tools icon (??) in the interface
+2. Check for the tools icon () in the interface
 3. Try a natural language query: "Show me all tables in my database"
 
-## ?? Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 
@@ -518,7 +590,7 @@ If queries are slow:
 3. Reduce query limits
 4. Enable RLS policies for better security and performance
 
-## ?? Monitoring
+##  Monitoring
 
 ### Logs
 - **Server logs**: Written to stderr (visible in terminal)
@@ -539,7 +611,7 @@ print(manager.test_connection())
 "
 ```
 
-## ?? Contributing
+##  Contributing
 
 1. **Follow Code Style**: Use `ruff` for formatting and `mypy` for type checking
 2. **Write Tests**: Add tests for new features in `tests/`
@@ -554,7 +626,7 @@ print(manager.test_connection())
 - Include both positive and negative test cases
 - Document all public functions with Google-style docstrings
 
-## ??? Architecture
+## ? Architecture
 
 ### Core Components
 
@@ -571,11 +643,11 @@ print(manager.test_connection())
 - **Performance**: Efficient queries with reasonable limits
 - **Usability**: Natural language interface through Claude integration
 
-## ?? License
+##  License
 
 This project follows the license specified in the repository.
 
-## ?? Support
+##  Support
 
 For issues and questions:
 
@@ -586,4 +658,4 @@ For issues and questions:
 
 ---
 
-**Built with ?? using FastMCP, Supabase, and Pydantic**
+**Built with  using FastMCP, Supabase, and Pydantic**
