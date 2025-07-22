@@ -1,5 +1,8 @@
 # Supabase MCP Server
 
+?? ### Aktualisierung ###
+Den Workflow um ein weiteres Feature erweitert, um das Context Engineering Show Case vollständiger zu gestalten - das MCP Server untertützt nun "streamble http" und nicht nur "stdio", wie in der ersten Version - als Feature Branch
+
 ## DEMO of this application using Claude Desktop MCP integraiton:
 ![Demo](demo.png)
 
