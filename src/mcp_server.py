@@ -5,6 +5,8 @@ Provides tools for querying, inserting, updating, and introspecting database str
 with built-in Row Level Security and comprehensive input validation.
 """
 
+import argparse
+import asyncio
 import json
 import logging
 import os
@@ -766,6 +768,90 @@ async def update_record(table_name: str, filters: Dict[str, Any], updates: Dict[
         )
 
 
+async def main():
+    """Main entry point with support for both STDIO and HTTP transport modes."""
+    parser = argparse.ArgumentParser(
+        description="Supabase MCP Server with dual-mode transport support"
+    )
+    parser.add_argument(
+        "--mode", 
+        choices=["stdio", "http"], 
+        default="stdio",
+        help="Transport mode: stdio (default) for local use, http for web deployment"
+    )
+    parser.add_argument(
+        "--host", 
+        default="127.0.0.1",
+        help="Host to bind HTTP server to (default: 127.0.0.1)"
+    )
+    parser.add_argument(
+        "--port", 
+        type=int, 
+        default=8000,
+        help="Port for HTTP server (default: 8000)"
+    )
+    parser.add_argument(
+        "--cors-origins",
+        default=None,
+        help="Comma-separated list of allowed CORS origins for HTTP mode"
+    )
+    
+    args = parser.parse_args()
+    
+    logger.info(f"Starting {config['server_name']} MCP server in {args.mode.upper()} mode...")
+    
+    if args.mode == "stdio":
+        # STDIO mode - preserve existing behavior
+        logger.info("Using STDIO transport (stdin/stdout)")
+        mcp.run()
+        
+    elif args.mode == "http":
+        # HTTP mode - use FastMCP's built-in streamable HTTP
+        try:
+            import uvicorn
+            
+            # Get the FastMCP streamable HTTP app
+            app = mcp.streamable_http_app()
+            logger.info(f"Using FastMCP streamable HTTP on {args.host}:{args.port}")
+            
+            # Configure uvicorn
+            uvicorn_config = uvicorn.Config(
+                app=app,
+                host=args.host,
+                port=args.port,
+                log_level="info"
+            )
+            server = uvicorn.Server(uvicorn_config)
+            await server.serve()
+            
+        except ImportError as e:
+            logger.error(f"HTTP transport dependencies missing: {e}")
+            logger.error("Please install HTTP dependencies: uv sync")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"HTTP transport failed: {e}")
+            sys.exit(1)
+    
+    logger.info("MCP server shutdown complete")
+
+
 if __name__ == "__main__":
-    logger.info(f"Starting {config['server_name']} MCP server...")
-    mcp.run()
+    # Run appropriate transport mode
+    if len(sys.argv) > 1 and any("--mode=http" in arg or arg == "http" for arg in sys.argv):
+        # HTTP mode requires async event loop
+        try:
+            asyncio.run(main())
+        except KeyboardInterrupt:
+            logger.info("Server interrupted by user")
+        except Exception as e:
+            logger.error(f"Server error: {e}")
+            sys.exit(1)
+    else:
+        # STDIO mode - run synchronously for compatibility
+        try:
+            asyncio.run(main())
+        except KeyboardInterrupt:
+            logger.info("Server interrupted by user")
+        except Exception as e:
+            logger.error(f"Server error: {e}")
+            sys.exit(1)

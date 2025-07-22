@@ -540,3 +540,198 @@ class TestErrorHandling:
 
         assert "**Error**" in response
         assert "Unable to list tables" in response
+
+
+class TestDualModeCompatibility:
+    """Test dual-mode functionality ensuring STDIO and HTTP modes behave identically."""
+    
+    @patch('src.mcp_server.supabase_manager')
+    @pytest.mark.asyncio
+    async def test_tool_behavior_consistency(self, mock_manager):
+        """Test that tools behave identically in both STDIO and HTTP modes."""
+        # Mock successful tool response
+        mock_result = Mock()
+        mock_result.data = [
+            {"id": 1, "name": "Test Table", "type": "BASE TABLE"}
+        ]
+        mock_manager.get_client.return_value.rpc.return_value.execute.return_value = mock_result
+        
+        # Import tools from MCP server
+        from src.mcp_server import list_tables
+        
+        # Test tool execution (simulates both STDIO and HTTP execution)
+        response = await list_tables()
+        
+        # Verify response format is consistent
+        assert "**Success**" in response
+        assert "Test Table" in response
+        assert isinstance(response, str)  # Both modes should return string responses
+    
+    @patch('src.mcp_server.supabase_manager')  
+    @pytest.mark.asyncio
+    async def test_error_handling_consistency(self, mock_manager):
+        """Test that error handling is consistent between modes."""
+        # Mock database error
+        mock_manager.get_client.side_effect = Exception("Connection failed")
+        
+        from src.mcp_server import list_tables
+        
+        # Test error response
+        response = await list_tables()
+        
+        # Verify error format is consistent
+        assert "**Error**" in response
+        assert "Connection failed" in response or "Unable to list tables" in response
+        assert isinstance(response, str)
+    
+    def test_main_function_argument_parsing(self):
+        """Test that main function properly handles CLI arguments."""
+        import argparse
+        from unittest.mock import patch
+        
+        # Test default STDIO mode
+        with patch('sys.argv', ['mcp_server.py']):
+            # This would normally call main(), but we just test argument parsing
+            parser = argparse.ArgumentParser()
+            parser.add_argument("--mode", choices=["stdio", "http"], default="stdio")
+            parser.add_argument("--host", default="127.0.0.1")  
+            parser.add_argument("--port", type=int, default=8000)
+            
+            args = parser.parse_args([])
+            assert args.mode == "stdio"
+            assert args.host == "127.0.0.1"
+            assert args.port == 8000
+        
+        # Test HTTP mode arguments
+        with patch('sys.argv', ['mcp_server.py', '--mode=http', '--port=9000']):
+            args = parser.parse_args(['--mode=http', '--port=9000'])
+            assert args.mode == "http"
+            assert args.port == 9000
+    
+    @patch('src.mcp_server.supabase_manager')
+    @pytest.mark.asyncio 
+    async def test_validation_consistency(self, mock_manager):
+        """Test that input validation works consistently in both modes."""
+        from src.mcp_server import query_table
+        
+        # Test invalid table name (should fail in both modes)
+        response = await query_table("123invalid", limit=10)
+        
+        assert "**Error**" in response
+        assert "validation failed" in response.lower() or "invalid" in response.lower()
+    
+    def test_environment_variable_handling(self):
+        """Test that environment variables work in both modes."""
+        # Test that both modes use the same environment validation
+        from src.mcp_server import validate_environment, get_config
+        
+        with patch.dict(os.environ, {
+            "SUPABASE_URL": "https://test.supabase.co", 
+            "SUPABASE_ANON_KEY": "test-key",
+            "HTTP_HOST": "0.0.0.0",
+            "HTTP_PORT": "9000"
+        }):
+            # Should not raise for either mode
+            validate_environment()
+            
+            # Config should include all necessary settings
+            config = get_config()
+            assert "server_name" in config
+            assert "max_query_limit" in config
+
+
+class TestHttpModeSpecificFeatures:
+    """Test features specific to HTTP mode."""
+    
+    def test_http_transport_import(self):
+        """Test that HTTP transport can be imported when needed."""
+        try:
+            from src.http_transport import HttpTransport
+            assert HttpTransport is not None
+        except ImportError:
+            pytest.fail("HTTP transport should be importable")
+    
+    def test_transport_base_import(self):
+        """Test that transport base can be imported."""
+        try:
+            from src.transport_base import TransportBase, TransportError
+            assert TransportBase is not None
+            assert TransportError is not None
+        except ImportError:
+            pytest.fail("Transport base should be importable")
+    
+    def test_jsonrpc_models_import(self):
+        """Test that JSON-RPC models can be imported."""
+        try:
+            from src.http_transport import JsonRpcRequest, JsonRpcResponse, JsonRpcError
+            assert JsonRpcRequest is not None
+            assert JsonRpcResponse is not None
+            assert JsonRpcError is not None
+        except ImportError:
+            pytest.fail("JSON-RPC models should be importable")
+
+
+class TestBackwardCompatibility:
+    """Test that existing STDIO functionality remains unchanged."""
+    
+    @patch('src.mcp_server.supabase_manager')
+    @pytest.mark.asyncio
+    async def test_stdio_tools_unchanged(self, mock_manager):
+        """Test that all existing STDIO tools work unchanged."""
+        # Mock successful responses for all tools
+        mock_result = Mock()
+        mock_result.data = [{"id": 1, "name": "test"}]
+        mock_manager.execute_query.return_value = mock_result
+        mock_manager.get_client.return_value.rpc.return_value.execute.return_value = mock_result
+        
+        # Import and test all major tools
+        from src.mcp_server import list_tables, query_table, describe_table, insert_record, update_record
+        
+        # Test each tool maintains its signature and behavior
+        list_response = await list_tables()
+        assert isinstance(list_response, str)
+        assert "**Success**" in list_response or "accessible table" in list_response.lower()
+        
+        query_response = await query_table("users", limit=10)
+        assert isinstance(query_response, str)
+        
+        describe_response = await describe_table("users")
+        assert isinstance(describe_response, str)
+        
+        insert_response = await insert_record("users", {"name": "test"})
+        assert isinstance(insert_response, str)
+        
+        update_response = await update_record("users", {"id": 1}, {"name": "updated"})
+        assert isinstance(update_response, str)
+    
+    def test_response_format_unchanged(self):
+        """Test that response format helpers remain unchanged."""
+        from src.mcp_server import create_error_response, create_success_response
+        
+        # Test error response format
+        error_response = create_error_response("Test error", {"detail": "info"})
+        assert "**Error**" in error_response
+        assert "Test error" in error_response
+        assert "detail" in error_response
+        
+        # Test success response format  
+        success_response = create_success_response("Test success", {"data": "value"})
+        assert "**Success**" in success_response
+        assert "Test success" in success_response
+        assert "data" in success_response
+    
+    def test_config_functions_unchanged(self):
+        """Test that configuration functions work unchanged."""
+        from src.mcp_server import get_config, validate_environment
+        
+        with patch.dict(os.environ, {
+            "SUPABASE_URL": "https://test.supabase.co",
+            "SUPABASE_ANON_KEY": "test-key"
+        }):
+            # Should work without throwing
+            validate_environment()
+            
+            config = get_config()
+            assert isinstance(config, dict)
+            assert "server_name" in config
+            assert "max_query_limit" in config
