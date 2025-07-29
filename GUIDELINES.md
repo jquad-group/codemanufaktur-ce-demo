@@ -1057,3 +1057,89 @@ git commit -m "feat: add new MCP tool for table introspection"
 - **Never hallucinate libraries or functions** – only use known, verified Python packages.
 - **Always confirm file paths and module names** exist before referencing them in code or tests.
 - **Never delete or overwrite existing code** unless explicitly instructed to or if part of a task from `TASK.md`.
+
+### Streamable HTTP Implementation (Generic)
+
+**Enhance any MCP server to support the new streamable HTTP protocol as the primary transport alternative to STDIO. This enables efficient, web-based streaming interactions with MCP clients like Claude Desktop.**
+
+**Key Patterns:**
+- Integrate with a web framework (e.g., FastAPI) to handle the streamable HTTP protocol.
+- Implement bidirectional streaming as per the protocol specs for real-time data exchange.
+- Use configuration options (e.g., CLI flags or env vars) to switch between STDIO and streamable HTTP modes.
+- Maintain compatibility with existing STDIO tools and ensure secure, validated requests.
+
+**Generic MCP Server Architecture with Streamable HTTP Support:**
+
+```python
+import asyncio
+from mcp.server.fastmcp import FastMCP
+from typing import Any, Optional, Dict
+import json
+import os
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request, Response
+import uvicorn
+import argparse
+
+load_dotenv()
+
+# Parse CLI args for mode (generic)
+parser = argparse.ArgumentParser()
+parser.add_argument("--mode", choices=["stdio", "streamable-http"], default="stdio")
+parser.add_argument("--port", type=int, default=8000)
+args = parser.parse_args()
+
+# FastMCP instance (generic)
+mcp = FastMCP("generic-mcp-server")
+
+# Example generic tool
+@mcp.tool()
+async def example_tool(param: str) -> str:
+    return f"Processed: {param}"
+
+if args.mode == "stdio":
+    # STDIO mode
+    if __name__ == "__main__":
+        mcp.run()
+elif args.mode == "streamable-http":
+    # Streamable HTTP mode
+    app = FastAPI()
+
+    @app.post("/mcp/stream")  # Endpoint as per protocol
+    async def mcp_stream_endpoint(request: Request) -> Response:
+        body = await request.json()
+        method = body.get("method")
+        params = body.get("params", {})
+        
+        # Dispatch to MCP tool and handle streaming response
+        if method in mcp.tools:
+            result = await mcp.tools[method](**params)
+            # Implement protocol-specific streaming (adapt based on docs)
+            def stream_generator():
+                yield json.dumps({"result": result})  # Simplified; expand for full streaming
+            return Response(stream_generator(), media_type="application/json")
+        else:
+            return Response(content=json.dumps({"error": "Tool not found"}), status_code=404)
+
+    if __name__ == "__main__":
+        uvicorn.run(app, host="0.0.0.0", port=args.port)
+```
+
+**Development Commands for Streamable HTTP (Generic):**
+
+```bash
+# Start in streamable HTTP mode
+uv run python src/your_mcp_server.py --mode=streamable-http --port=8000
+
+# Test with curl (generic example; adapt to protocol)
+curl -X POST http://localhost:8000/mcp/stream -H "Content-Type: application/json" -d '{"method": "example_tool", "params": {"param": "test"}}'
+```
+
+**Logging for Streamable HTTP Mode (Generic):**
+- Use the web framework's logging for request handling.
+- Log stream events for debugging real-time interactions.
+
+**Security for Streamable HTTP (Generic):**
+- Implement protocol-required authentication (e.g., headers or tokens).
+- Validate streams to prevent injection or overload.
+- Ensure CORS and rate limiting for web access.

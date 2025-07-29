@@ -14,37 +14,37 @@ This project follows a structured Context Engineering approach for AI-assisted d
 ### Setup
 
 1. **Repository klonen**: `git clone https://github.com/jquad-group/codemanufaktur-ce-demo.git`
-2. **Projektregeln in GUIDELINES.md definieren** (team-übergreifende Richtlichen)
+2. **Projektregeln in GUIDELINES.md definieren** (team-ï¿½bergreifende Richtlichen)
 3. **Code-Beispiele im examples/ Ordner definieren** (stark empfohlen, hier nicht vorhanden)
 
 ### Workflow-Schritte
 
 #### 1. Feature Request erstellen
 
-- **THIS_PROJECT.md** mit konkreten Anforderungen für MCP Tools/Features bearbeiten
-- Spezifische Supabase-Funktionalität und Database Requirements beschreiben
+- **THIS_PROJECT.md** mit konkreten Anforderungen fï¿½r MCP Tools/Features bearbeiten
+- Spezifische Supabase-Funktionalitï¿½t und Database Requirements beschreiben
 - Relevante Beispiele aus dediziertem Ordner referenzieren
 - Supabase Dokumentation, MCP APIs usw. verlinken
 
 #### 2. PRP (Product Requirements Prompt) generieren
 
 - **Claude Code Kommando**: `/generate-prp THIS_PROJECT.md`
-- Automatische Codebase-Analyse für MCP Server Patterns
+- Automatische Codebase-Analyse fï¿½r MCP Server Patterns
 - Sammlung relevanter Supabase und FastMCP Dokumentation
 - Erstellung umfassender Implementierungs-Blueprint in `PRPs/`
 
 #### 3. Features implementieren
 
-**Für das Haupt-Projekt:**
+**Fï¿½r das Haupt-Projekt:**
 - **Claude Code Kommando**: `/execute-prp THIS_PROJECT.md`
 
-**Für neue Features:**
+**Fï¿½r neue Features:**
 - **Claude Code Kommando**: `/execute-prp PRPs/new-feature-name.md`
 - Neue PRP-Dateien werden automatisch in `PRPs/` erstellt
 
 **Implementierung:**
 - AI liest gesamten Kontext aus PRP (Database Schema, Security, Tools)
-- Detaillierte Implementierungsplanung für MCP Tools
+- Detaillierte Implementierungsplanung fï¿½r MCP Tools
 - Schrittweise Umsetzung mit Row Level Security Validierung
 
 #### 4. Validierung & Testing
@@ -64,18 +64,18 @@ context-engineering-mcp-db/
 ?   ? supabase-mcp-server.md
 ? src/                     # MCP Server Implementation Examples
 ? tests/                   # Test Patterns und Validation Examples
-? GUIDELINES.md           # Projekt-weite Regeln für AI Assistant
+? GUIDELINES.md           # Projekt-weite Regeln fï¿½r AI Assistant
 ? THIS_PROJECT.md        # Projekt-Kontext und Architektur
 ```
 
-### Best Practices für MCP Development
+### Best Practices fï¿½r MCP Development
 
 - **Konkrete Database Schema Beschreibungen** mit RLS Policy Requirements
 - **Umfangreiche MCP Tool Beispiele** in `src/mcp_server.py`
 - **Supabase API-Dokumentation** und FastMCP Patterns einbinden
 - **Spezifische Security Constraints** und Row Level Security definieren
-- **Test-Patterns für Database Operations** und Error-Handling inkludieren
-- **Environment Configuration** für verschiedene Supabase Setups
+- **Test-Patterns fï¿½r Database Operations** und Error-Handling inkludieren
+- **Environment Configuration** fï¿½r verschiedene Supabase Setups
 
 ---
 
@@ -506,11 +506,71 @@ Add to your Claude Desktop configuration file:
   - Replace the directory path with your actual project location
   - Use forward slashes `/` even on Windows (as shown in the examples above)
 
+### Option 3: HTTP Mode Configuration (New!)
+
+The MCP server now supports **streamable HTTP transport** as an alternative to STDIO, enabling web-based deployment and remote access.
+
+#### Starting the Server in HTTP Mode
+
+```bash
+# Start server in HTTP mode (default: localhost:8000)
+uv run python src/mcp_server.py --mode=http
+
+# Custom host and port
+uv run python src/mcp_server.py --mode=http --host=0.0.0.0 --port=9000
+
+# With custom CORS origins
+uv run python src/mcp_server.py --mode=http --cors-origins="https://example.com,https://app.example.com"
+```
+
+#### Claude Desktop HTTP Configuration
+
+**Configuration File Location:**
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
+
+**HTTP Mode Example** (see `examples/claude_desktop_http_config.json`):
+```json
+{
+  "mcpServers": {
+    "supabase-http": {
+      "url": "http://localhost:8000/mcp",
+      "env": {
+        "SUPABASE_URL": "https://your-project.supabase.co",
+        "SUPABASE_ANON_KEY": "your-anon-key-here"
+      }
+    }
+  }
+}
+```
+
+#### HTTP Mode Advantages
+
+- **Remote Deployment**: Deploy server on cloud infrastructure
+- **Scalability**: Support multiple Claude Desktop instances
+- **Web Integration**: Integrate with web applications and services
+- **Streaming**: Enhanced real-time data streaming via Server-Sent Events
+- **Session Management**: Optional session persistence across requests
+
+#### HTTP Mode Requirements
+
+1. **Server must be started separately**: `uv run python src/mcp_server.py --mode=http`
+2. **Network accessibility**: Ensure firewall allows connections to the port
+3. **CORS configuration**: Configure allowed origins for web-based clients
+4. **HTTPS in production**: Use reverse proxy (nginx, cloudflare) for security
+
 ### Verification
 
+**For STDIO Mode:**
 1. Restart Claude Desktop
-2. Check for the tools icon () in the interface
+2. Check for the tools icon (ðŸ”§) in the interface
 3. Try a natural language query: "Show me all tables in my database"
+
+**For HTTP Mode:**
+1. Start the server: `uv run python src/mcp_server.py --mode=http`
+2. Verify server is running: `curl http://localhost:8000/health`
+3. Update Claude Desktop configuration with HTTP URL
+4. Restart Claude Desktop and test tools
 
 ##  Troubleshooting
 
@@ -561,10 +621,65 @@ SELECT * FROM pg_policies WHERE tablename = 'your_table_name';
 3. **Overly restrictive policies**: Start with `USING (true)` for testing, then refine
 4. **RLS not enabled**: Run `ALTER TABLE your_table ENABLE ROW LEVEL SECURITY;`
 
-#### Claude Desktop Integration Issues
+#### Claude Desktop Integration Issues (STDIO Mode)
 1. **Tools not appearing**: Check Claude Desktop logs at `~/Library/Logs/Claude/mcp*.log`
 2. **Permission errors**: Verify absolute paths in configuration
 3. **Environment variables**: Ensure credentials are in Claude Desktop config
+
+#### HTTP Mode Specific Issues
+
+**Server Won't Start in HTTP Mode:**
+```bash
+# Check if port is already in use
+netstat -an | grep :8000
+
+# Test with different port
+uv run python src/mcp_server.py --mode=http --port=9000
+
+# Check FastAPI dependencies
+uv run python -c "import fastapi, uvicorn; print('HTTP dependencies OK')"
+```
+
+**Connection Issues:**
+```bash
+# Test server is accessible
+curl http://localhost:8000/health
+
+# Test MCP endpoint
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"jsonrpc":"2.0","method":"list_tables","id":1}'
+```
+
+**Claude Desktop HTTP Integration Issues:**
+1. **Tools not appearing with HTTP URL**: 
+   - Verify server is running: `curl http://localhost:8000/health`
+   - Check URL format in configuration: `"url": "http://localhost:8000/mcp"`
+   - Ensure no trailing slashes in URL
+2. **Connection timeouts**:
+   - Verify firewall allows connections on the port
+   - Check if server is bound to correct interface (use `0.0.0.0` for all interfaces)
+3. **CORS errors** (in browser-based clients):
+   - Add allowed origins: `--cors-origins="https://claude.ai"`
+   - Check browser developer tools for CORS messages
+
+**Remote Deployment Issues:**
+```bash
+# Test remote server accessibility
+curl http://your-server-ip:8000/health
+
+# Check server logs for connection attempts
+tail -f logs/server.log
+
+# Verify environment variables on remote server
+env | grep SUPABASE
+```
+
+**Session and Streaming Issues:**
+1. **Streaming not working**: Check `Accept` headers include `text/event-stream`
+2. **Session errors**: Sessions are optional - server creates them automatically
+3. **Large response timeouts**: Increase client timeout for large queries
 
 #### Validation Errors
 ```bash

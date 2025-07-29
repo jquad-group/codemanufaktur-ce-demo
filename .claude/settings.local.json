@@ -33,7 +33,14 @@
       "Bash(echo $SHELL)",
       "mcp__supabase-mcp-server__list_tables",
       "Bash(start /b uv run python -m src.mcp_server)",
-      "mcp__supabase-mcp-server__query_table"
+      "mcp__supabase-mcp-server__query_table",
+      "WebFetch(domain:blog.cloudflare.com)",
+      "Bash(set PYTHONPATH=.)",
+      "Bash(.venvScriptspython.exe srcmcp_server.py --mode=http --host=0.0.0.0 --port=9000)",
+      "Bash(\".venv/Scripts/python.exe\" src/mcp_server.py --mode=http --host=0.0.0.0 --port=9000)",
+      "Bash(uv venv:*)",
+      "Bash(where python)",
+      "Bash(rm:*)"
     ],
     "deny": []
   },

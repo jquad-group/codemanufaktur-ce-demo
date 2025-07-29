@@ -1,0 +1,45 @@
+{
+  "mcpServers": {
+    "supabase-http": {
+      // HTTP mode configuration for Supabase MCP Server
+      // Use this instead of the command-based STDIO configuration
+      "url": "http://localhost:8000/mcp",
+      
+      // Environment variables for HTTP mode
+      // These are passed to the remote server, not used locally
+      "env": {
+        // Required: Your Supabase project configuration
+        "SUPABASE_URL": "https://your-project-id.supabase.co",
+        "SUPABASE_ANON_KEY": "your-anon-key-here",
+        
+        // Optional: For admin operations (use with caution)
+        "SUPABASE_SERVICE_ROLE_KEY": "your-service-role-key-here",
+        
+        // Optional: Server configuration (defaults shown)
+        "LOG_LEVEL": "INFO",
+        "MCP_SERVER_NAME": "supabase-mcp",
+        "MCP_MAX_QUERY_LIMIT": "1000",
+        "DEBUG": "false"
+      }
+    }
+  }
+}
+
+// Key differences from STDIO mode:
+// 1. Uses "url" instead of "command" and "args"
+// 2. Server must be started separately: python src/mcp_server.py --mode=http
+// 3. Supports remote deployment (change localhost to actual server IP/domain)
+// 4. Environment variables are passed via HTTP headers, not local environment
+// 5. Requires the server to be accessible via HTTP (firewall/network configuration)
+
+// For remote deployment, change the URL:
+// "url": "https://your-server.example.com:8000/mcp"
+
+// For different ports or hosts:
+// "url": "http://192.168.1.100:9000/mcp"
+
+// Security notes for HTTP mode:
+// - Always use HTTPS in production environments
+// - Consider authentication mechanisms for public deployments
+// - Ensure proper firewall configuration
+// - Use environment-specific Supabase keys (not production keys for development)
